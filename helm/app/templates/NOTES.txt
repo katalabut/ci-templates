@@ -1,0 +1,8 @@
+1. Get the application URL by running these commands:
+{{- if (contains "Ingress" $.Values.environments.CI_DEPLOY_COMPONENTS) }}
+{{- range $host := .Values.http.hosts }}
+  {{- range $path := $host.paths }}
+  http{{ if $.Values.http.tls }}s{{ end }}://{{ $host.host }}{{ $path.path }}
+  {{- end }}
+{{- end }}
+{{- end }}

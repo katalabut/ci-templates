@@ -1,0 +1,85 @@
+# Default values for app.
+# This is a YAML-formatted file.
+
+app: "app"
+version: "1.0.0"
+environment: "dev"
+
+podApp:
+  replicas: 2
+  annotations:
+    prometheus.io/scrape: "true"
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+  containers:
+    app:
+      image: "registry.com/api:main"
+      resources: {}
+#        requests:
+#          memory: "64Mi"
+#          cpu: "0.01"
+#        limits:
+#          memory: "128Mi"
+#          cpu: "0.5"
+      ports:
+        - name: http
+          externalPort: 80
+          containerPort: 8080
+          protocol: TCP
+      env: { }
+#        APP_PORT: 8080
+  initContainers: { }
+
+environments:
+  CI_DEPLOY_COMPONENTS: Ingress,Service
+
+defaults:
+#  Defaults for all containers
+  container:
+    resources: { }
+    env: { }
+    preStopHook:
+      enabled: true
+      type: exec
+      customHook: { }
+      # command: ["/bin/kill", "-9", "1"]
+
+  http:
+    ingressClassName: "nginx"
+    annotations:
+      cert-manager.io/issuer: letsencrypt-nginx
+
+#  Defaults nodeSelector for all pods
+  nodeSelector: { }
+
+#  Defaults tolerations for all pods
+  tolerations: [ ]
+
+#  Defaults affinity for all pods
+  affinity: { }
+
+image:
+  registry:
+    pullPolicy: Always
+    imagePullSecretName: "app"
+
+# Additional volumes on the output Deployment definition.
+volumes: [ ]
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+http:
+  domain: "test.com"
+  annotations: {}
+  hosts:
+    - host: customer-api
+      tls:
+        enabled: true
+        secretName: letsencrypt-nginx
+      paths:
+        - path: /
+          pathType: Prefix

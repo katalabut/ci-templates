@@ -1,0 +1,20 @@
+{{- if (contains "Service" $.Values.environments.CI_DEPLOY_COMPONENTS) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "app.selectorLabels" . | nindent 4 }}
+  ports:
+{{- range $containerName, $container := $.Values.podApp.containers }}
+{{- range $containerPort := $container.ports}}
+{{- (printf "- name: %s\n  port: %.0f\n  targetPort: %s\n" $containerPort.name ($containerPort.externalPort) $containerPort.name) | nindent 4 -}}
+{{- end}}
+{{- end}}
+
+{{- end}}
+

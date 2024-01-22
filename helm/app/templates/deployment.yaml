@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.podApp.replicas }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podApp.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        - name: {{ $.Values.image.registry.imagePullSecretName }}
+{{/*      serviceAccountName: {{ include "app.serviceAccountName" . }}*/}}
+      securityContext:
+        {{- toYaml .Values.podApp.securityContext | nindent 8 }}
+      containers:
+{{- range $containerName, $container := .Values.podApp.containers }}
+        - name: {{ $containerName }}
+          image: "{{ $container.image }}"
+          imagePullPolicy: Always
+
+          {{- with $container.ports }}
+          ports:
+            {{- range . }}
+            - name: {{ .name }}
+              containerPort: {{ .containerPort }}
+              protocol: {{ .protocol }}
+            {{- end }}
+          {{- end }}
+
+          {{- $environments := merge $container.env $.Values.environments }}
+          {{- with $environments }}
+          env:
+          {{ range $envName, $env := . -}}
+          {{- (printf "- {name: %s, value: %s}\n" ($envName | upper) (tpl ($env | quote) $) ) | nindent 12 -}}
+          {{- end }}
+          {{- end }}
+
+          {{- with $container.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.readinessProbe }}
+          readinessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.defaults.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.defaults.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.defaults.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

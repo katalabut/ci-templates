@@ -1,0 +1,55 @@
+{{- if (contains "Ingress" $.Values.environments.CI_DEPLOY_COMPONENTS) }}
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" $ }}
+kind: Ingress
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+
+  {{- $annotations := merge .Values.http.annotations .Values.defaults.http.annotations }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.http.ingressClassName }}
+  ingressClassName: {{ .Values.http.ingressClassName }}
+  {{- else if .Values.defaults.http.ingressClassName }}
+  ingressClassName: {{ .Values.defaults.http.ingressClassName }}
+  {{- end }}
+
+  {{- $hasTLS := false -}}
+  {{- range .Values.http.hosts }}
+    {{- if .tls.enabled }}
+      {{- $hasTLS = true -}}
+    {{- end }}
+  {{- end }}
+
+  {{- if $hasTLS }}
+  tls:
+    {{- range .Values.http.hosts }}
+      {{- if .tls.enabled }}
+    - hosts:
+        - {{ .host }}
+      secretName: {{ .tls.secretName }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  rules:
+    {{- range $host := .Values.http.hosts }}
+    {{- if eq $.Release.Namespace $.Values.environment }}
+    - host: "{{ $host.host }}.{{ $.Release.Namespace }}.{{ $.Values.http.domain }}"
+    {{- else if eq $.Values.environment "prod" }}
+    - host: "{{ $host.host }}.{{ $.Values.http.domain }}"
+    {{- else }}
+    - host: "{{ $host.host }}-{{ $.Release.Namespace }}.{{ $.Values.environment }}.{{ $.Values.http.domain }}"
+    {{- end }}
+      http:
+        paths:
+          {{- range $path := $host.paths }}
+          - path: "/"
+            {{- include "common.ingress.backend" (dict "serviceName" (include "app.fullname" $) "servicePort" (default "http" $host.port) "context" $) | nindent 12 }}
+          {{- end }}
+    {{- end }}
+{{- end }}
