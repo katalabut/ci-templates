@@ -30,7 +30,7 @@ spec:
     {{- range .Values.http.hosts }}
       {{- if .tls.enabled }}
     - hosts:
-        - {{- if eq $.Release.Namespace $.Values.environment }}
+        {{- if eq $.Release.Namespace $.Values.environment }}
         - { .host }}-{{ $.Release.Namespace }}.{{ $.Values.http.domain }}
         {{- else if eq $.Values.environment "prod" }}
         - {{ .host }}.{{ $.Values.http.domain }}
