@@ -18,7 +18,6 @@ spec:
       {{- end }}
       labels:
         {{- include "app.labels" . | nindent 8 }}
-        releaseCount: {{ .Release.Revision }}
     spec:
       imagePullSecrets:
         - name: {{ $.Values.image.registry.imagePullSecretName }}

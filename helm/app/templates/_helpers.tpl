@@ -55,6 +55,7 @@ Common labels
 */}}
 {{- define "app.labels" -}}
 helm.sh/chart: {{ include "app.chart" . }}
+release/revision: {{ .Release.Revision | default "0" | quote }}
 {{ include "app.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
