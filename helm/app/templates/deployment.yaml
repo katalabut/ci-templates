@@ -21,9 +21,55 @@ spec:
     spec:
       imagePullSecrets:
         - name: {{ $.Values.image.registry.imagePullSecretName }}
-{{/*      serviceAccountName: {{ include "app.serviceAccountName" . }}*/}}
       securityContext:
         {{- toYaml .Values.podApp.securityContext | nindent 8 }}
+      {{- with .Values.podApp.initContainers }}
+      initContainers:
+        {{- range $containerName, $container := . }}
+        - name: {{ .$containerName }}
+          image: "{{ $container.image }}"
+          imagePullPolicy: Always
+
+          {{- with $container.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.env }}
+          env:
+            {{ range $envName, $env := . -}}
+              - name: {{ $envName | upper }}
+                value: {{ $env | quote }}
+            {{- end }}
+          {{- end }}
+
+          {{- with $container.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with $container.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
       containers:
 {{- range $containerName, $container := .Values.podApp.containers }}
         - name: {{ $containerName }}
